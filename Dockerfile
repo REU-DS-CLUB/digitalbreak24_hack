@@ -1,4 +1,4 @@
-FROM python:3.9
+FROM python:3.12
 
 WORKDIR /app
 
@@ -7,8 +7,9 @@ RUN pip install --upgrade pip
 
 COPY . .
 
-RUN pip install -r requirements.txt
+RUN poetry install
 
 EXPOSE 8002
 
+# проверить
 CMD ["python3", "./App/main.py"]

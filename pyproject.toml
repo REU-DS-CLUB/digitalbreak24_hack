@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "digitalbreak24-hack"
+version = "0.1.0"
+description = ""
+authors = ["artemmmichurin <amichurin@sbdagroup.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+psycopg2-binary = "*"
+requests = "*"
+Levenshtein = "*"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

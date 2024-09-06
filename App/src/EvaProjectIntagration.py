@@ -3,6 +3,12 @@ import Levenshtein
 import logging
 from typing import List, Dict, Union
 
+<<<<<<< HEAD
+=======
+# настройка конфигурации для логирования
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', force=True)
+>>>>>>> ff5abe9bb4006ec9276649dce2e2b2cdf25510a5
+
 
 class EvaProjectIntegration:
     """
@@ -28,7 +34,6 @@ class EvaProjectIntegration:
         # Настройка конфигурации для логирования
         if logging_flag: 
             logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', force=True)
-
 
     def create_task(self, task_name: str = "", list_name: str = 'Спринт 1', 
                     task_description: str = "", responsible_name: str = "") -> None:
@@ -70,8 +75,7 @@ class EvaProjectIntegration:
         
         logging.debug(f"Статус по CmfTask.create {task_name}: {result.status_code}")
         logging.debug(f"Ответ от API: {result.json()}")
-        
-        
+
     def get_user_id_by_name(self, name: str) -> str:
         """
         Finds the user ID based on the closest match to the given name using Levenshtein distance.
@@ -98,7 +102,6 @@ class EvaProjectIntegration:
         logging.debug(f"Ближайший найденный пользователь по {name}: {best_user_name}")
                 
         return best_user_id
-
 
     def get_users(self) -> List[Dict[str, Union[str, int]]]:
         """
