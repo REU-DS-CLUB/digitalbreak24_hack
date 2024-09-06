@@ -4,3 +4,4 @@ venv
 .DS_Store 
 secrets/hugging_face_token.txt
 secrets
+.idea

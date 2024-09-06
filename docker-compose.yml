@@ -1,0 +1,45 @@
+version: '3.12'
+
+services:
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile_Bot
+    ports:
+      - "8501:8501"
+    depends_on:
+      - api
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile_Api
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - pg
+
+  pg:
+    image: postgres:15
+    container_name: pg
+    restart: always
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-U", "user", "-d", "hack" ]
+      interval: 10s
+      retries: 5
+      start_period: 5s
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./App/Postgres/deploy:/docker-entrypoint-initdb.d
+      - ./App/Postgres/data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+networks:
+  default:
+    name: network_hack
