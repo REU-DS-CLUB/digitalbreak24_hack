@@ -3,12 +3,7 @@ import Levenshtein
 import logging
 from typing import List, Dict, Union
 
-<<<<<<< HEAD
-=======
-# настройка конфигурации для логирования
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', force=True)
->>>>>>> ff5abe9bb4006ec9276649dce2e2b2cdf25510a5
-
 
 class EvaProjectIntegration:
     """
