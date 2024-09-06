@@ -3,12 +3,6 @@ Pelageya_test_eva_api.ipynb
 
 venv
 .DS_Store 
-<<<<<<< HEAD
-
-secrets/hugging_face_token.txt
 
 src/__pycache__
-=======
-secrets/hugging_face_token.txt
 secrets
->>>>>>> ff5abe9bb4006ec9276649dce2e2b2cdf25510a5
