@@ -1,5 +1,9 @@
 Pylageya_test_diarisation.ipynb
 Pelageya_test_eva_api.ipynb
+
 venv
 .DS_Store 
+
 secrets/hugging_face_token.txt
+
+src/__pycache__
