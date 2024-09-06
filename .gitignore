@@ -3,3 +3,4 @@ Pelageya_test_eva_api.ipynb
 venv
 .DS_Store 
 secrets/hugging_face_token.txt
+secrets
