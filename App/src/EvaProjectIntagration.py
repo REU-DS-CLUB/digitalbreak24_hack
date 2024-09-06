@@ -3,9 +3,6 @@ import Levenshtein
 import logging
 from typing import List, Dict, Union
 
-# настройка конфигурации для логирования
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', force=True)
-
 
 class EvaProjectIntegration:
     """
@@ -17,7 +14,7 @@ class EvaProjectIntegration:
         headers (dict): The headers to be used in API requests.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, logging_flag: int = 0) -> None:
         """
         Initializes the EvaProjectIntegration instance with API URL and authentication token.
         """
@@ -27,6 +24,10 @@ class EvaProjectIntegration:
             'content-type': 'application/json',
             'Authorization': self.token
         }
+        
+        # Настройка конфигурации для логирования
+        if logging_flag: 
+            logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', force=True)
 
     def create_task(self, task_name: str = "", list_name: str = 'Спринт 1', 
                     task_description: str = "", responsible_name: str = "") -> None:
@@ -47,7 +48,7 @@ class EvaProjectIntegration:
         if responsible_flag:
             responsible_id = self.get_user_id_by_name(responsible_name)  # Find nearest user by Levenshtein distance between names
             
-            if len(responsible_id) < 1:  # Case when user list is empty; get_user_id_by_name will return ""
+            if len(responsible_id) < 1:  # Case when user list is empty; get_user_id_by_name() will return ""
                 responsible_flag = 0
         
         method = 'POST'
@@ -66,7 +67,7 @@ class EvaProjectIntegration:
         
         result = requests.request(method, self.url, json=params, headers=self.headers)
         
-        logging.debug(f"Статус по CmfTask.create {task_name} - {result.status_code}")
+        logging.debug(f"Статус по CmfTask.create {task_name}: {result.status_code}")
         logging.debug(f"Ответ от API: {result.json()}")
 
     def get_user_id_by_name(self, name: str) -> str:
