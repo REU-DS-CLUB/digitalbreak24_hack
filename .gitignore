@@ -15,3 +15,5 @@ secrets
 App/Bot/__pycache__/
 App/__pycache__/__init__.cpython-312.pyc
 App/Bot/handlers/voices
+
+.env
