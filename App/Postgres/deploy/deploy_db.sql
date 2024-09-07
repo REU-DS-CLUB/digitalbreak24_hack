@@ -1,12 +1,17 @@
-drop table file_library;
+drop table if exists file_library;
 
 create table if not exists file_library
 (
     id                        serial,
-    file_name                 varchar,
-    raw_audio_path            varchar,
-    full_text_path            varchar,
-    official_summary_path     varchar,
-    unofficial_summary_path   varchar,
-    speaker_mapping           json
+    raw_file_name             varchar not null,
+    raw_audio_path            varchar not null,
+    create_time               timestamp not null,
+    duration                  int not null,
+    diarization               json default null,
+    full_text_path            varchar default null,
+    official_summary_path     varchar default null,
+    unofficial_summary_path   varchar default null,
+    speaker_mapping           json default null,
+    document                  json default null,
+    status                    varchar not null
 );
