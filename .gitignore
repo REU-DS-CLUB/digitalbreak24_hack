@@ -2,7 +2,10 @@ Pylageya_test_diarisation.ipynb
 Pelageya_test_eva_api.ipynb
 
 venv
+.venv
 .DS_Store 
 
-src/__pycache__
-secrets
+App/__pycache__
+App/src/__pycache__
+App/src/secrets
+
