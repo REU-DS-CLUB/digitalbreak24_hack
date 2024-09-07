@@ -4,5 +4,14 @@ Pelageya_test_eva_api.ipynb
 venv
 .DS_Store 
 
-src/__pycache__
+*__pycache__
+*/__pycache__
+__pycahe__/
+/venv
+/.venv
 secrets
+
+.idea/
+App/Bot/__pycache__/
+App/__pycache__/__init__.cpython-312.pyc
+App/Bot/handlers/voices
