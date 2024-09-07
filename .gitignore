@@ -2,6 +2,7 @@ Pylageya_test_diarisation.ipynb
 Pelageya_test_eva_api.ipynb
 
 venv
+.venv
 .DS_Store 
 
 *__pycache__
