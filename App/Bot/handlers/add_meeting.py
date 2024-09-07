@@ -27,8 +27,6 @@ async def get_voice(message: Message, bot: Bot):
         path = f"{file_holder}{str(file_id)}.{audio_type}"
         await bot.download_file(file_path, path)
 
-        # AudioSegment.from_file(path).export(path.replace(file.filename.split('.')[-1], 'mp3'), format='mp3')
-
         headers = {
             'accept': 'application/json'
         }

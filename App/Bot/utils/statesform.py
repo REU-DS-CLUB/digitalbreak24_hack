@@ -15,3 +15,8 @@ class EditSpeakers(StatesGroup):
     GET_SPEAKER_ID = State()
     GET_SPEAKER_NAME = State()
     GET_SPEAKER_TITLE = State()
+
+
+class AudioSpeaker(StatesGroup):
+    GET_SPEAKER_ID_AUDIO = State()
+

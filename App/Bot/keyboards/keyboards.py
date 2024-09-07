@@ -46,6 +46,7 @@ def file_type():
 def keyboard_speakers():
     kb = [
         [KeyboardButton(text="Посмотреть спикеров")],
+        [KeyboardButton(text="Прослушать спикера по номеру")],
         [KeyboardButton(text="Редактировать спикера")],
         [KeyboardButton(text="Назад")]
     ]

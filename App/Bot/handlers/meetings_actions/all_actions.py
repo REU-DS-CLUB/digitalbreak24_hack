@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup
 from aiogram.filters import Command
 
-from App.Bot.utils.statesform import AddNewMeeting, FindMeetingSteps, EditSpeakers
+from App.Bot.utils.statesform import AudioSpeaker, FindMeetingSteps, EditSpeakers
 from App.Bot.handlers.meetings_actions import speakers
 from App.Bot.keyboards.keyboards import keyboard_start, keyboard_back_start, keyboard_action, file_type, keyboard_speakers
 
@@ -49,7 +49,7 @@ async def action_show_file(message: Message, state: FSMContext):
 
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Спикеры")
 async def speakers(message: Message, state: FSMContext):
-    print(await get_speakers(state))
+    await get_speakers(message, state)
     # for speaker in get_speakers(state):
     #     pass
     await message.answer("Выбери действие", reply_markup=keyboard_speakers())
@@ -63,17 +63,30 @@ async def edit_speakers(message: Message, state: FSMContext):
 
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Посмотреть спикеров")
 async def show_speakers(message: Message, state: FSMContext):
-    print(await get_speakers(state))
+    await get_speakers(message, state)
 
 
-async def get_speakers(state: FSMContext):
+async def get_speakers(message: Message, state: FSMContext):
     data = await state.get_data()
     headers = {
         'accept': 'application/json',
     }
 
     response = requests.get(f"http://84.201.145.135:8000/v1/handlers/update_speakers_1/{data['file_id']}", headers=headers)
-    return response.json()
+    ans = response.json()
+    answer = ""
+    if ans is not None and ans["speaker_mapping"] is not None:
+        for speaker in ans["speaker_mapping"]:
+            if ans['speaker_mapping'][speaker][0] == "":
+                ans['speaker_mapping'][speaker][0] = "не задано"
+
+            if ans['speaker_mapping'][speaker][1] == "":
+                ans['speaker_mapping'][speaker][1] = "не задана"
+
+            answer += f"{speaker}: имя {ans['speaker_mapping'][speaker][0]} и должность {ans['speaker_mapping'][speaker][1]}\n"
+        await message.answer(answer)
+    else:
+        await message.answer("Нет спикеров.")
 
 
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Получить статус обработки файла")
@@ -91,6 +104,7 @@ async def get_file_status(message: Message, state: FSMContext):
         await message.answer("У файла нет статуса")
 
 
-@router.message(FindMeetingSteps.GET_ACTION and F.text == "Получить спикеров")
-async def change_file(message: Message, state: FSMContext):
-    pass
+@router.message(FindMeetingSteps.GET_ACTION and F.text == "Прослушать спикера по номеру")
+async def audio_speaker(message: Message, state: FSMContext):
+    await message.answer("Пришли номер спикера")
+    await state.set_state(AudioSpeaker.GET_SPEAKER_ID_AUDIO)
