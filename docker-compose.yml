@@ -16,7 +16,7 @@ services:
     restart: always
     volumes:
       - ./App/files:/files
-      - ./App/files/raw_audio:/files/raw_audio
+      - ./App/files/audio:/files/audio
       - ./App/files/full_text:/files/full_text
       - ./App/files/official_summary:/files/official_summary
       - ./App/files/unofficial_summary:/files/unofficial_summary
