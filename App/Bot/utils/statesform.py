@@ -20,3 +20,12 @@ class EditSpeakers(StatesGroup):
 class AudioSpeaker(StatesGroup):
     GET_SPEAKER_ID_AUDIO = State()
 
+
+class PasswordPDF(StatesGroup):
+    GET_PASSWORD = State()
+    DOWNLOAD_PDF_PASSWORD = State()
+
+
+class LogicalBlocks(StatesGroup):
+    LOGICAL_BLOCKS = State()
+    SEND_FILE = State()
