@@ -40,10 +40,10 @@
 | README.md                       | документация к репозиторию                                                           |
 
 ### Архитектура ML-сервиса
-Work in Progress
+![Screenshot 2024-09-08 at 07.47.08.png](Screenshot%202024-09-08%20at%2007.47.08.png)
 
 ### Описание API-сервиса
-Work in Progress
+![Screenshot 2024-09-08 at 07.48.35.png](..%2F..%2F..%2F..%2Fvar%2Ffolders%2F6v%2Fdvclf41x6876bhd4jyt7fkg00000gp%2FT%2FTemporaryItems%2FNSIRD_screencaptureui_V1moYI%2FScreenshot%202024-09-08%20at%2007.48.35.png)
 
 ### Функционал TG-бота
 

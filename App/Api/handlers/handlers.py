@@ -72,13 +72,13 @@ async def process_file(file_id: int) -> str:
         file_id: идентификатор файла, который необходим для процессинга
     """
 
-    # TODO: пишу в бд в diarization
     print('read_from_db')
     file_path = service.read_from_db(file_id, field_name='audio_path')
     print('speech_processing')
     json_file = service.speech_processing(file_path)
     print('make_correction')
     json_file = service.make_correction(json_file=json_file)
+    service.update_field_db(file_id, 'dearization', json_file)
     print('diarisation_to_text')
     participants, text = service.diarisation_to_text(json_file=json_file)
     print('make_questions')
@@ -94,10 +94,10 @@ async def process_file(file_id: int) -> str:
     final_dict = service.make_final_dict(theme=theme, participants=participants, detail_questions=detail_questions, tasks=tasks)
     service.update_field_db(file_id, 'documents', final_dict)
 
-    print(9)
+    print('send_message_as_bot')
     service.send_message_as_bot(file_id, f"Ваш файл с идентификатором {file_id} успешно обработан")
 
-    print(10)
+    print('update_field_db')
     status = service.update_field_db(file_id, 'status', 'обработка завершена')
 
     return status
@@ -178,8 +178,10 @@ async def add_tasks(file_id: int):
         file_id: идентификатор файла, который необходим для процессинга
     """
 
+    document = service.read_from_db(file_id, 'document')['document']
+
     try:
-        status = service.run_task_tracker_processing(file_id)
+        status = service.run_task_tracker_processing(document)
         return status
 
     except Exception as e:

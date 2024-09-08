@@ -12,8 +12,7 @@ from ML.Prompts import make_speaker_mapping_prompt, verificatiom_correctness_pro
 
 from ML.SpeechProcessing import SpeechProcessing
 from ML.diarization import diarization
-from ML.EvaProjectIntegration import EvaProjectIntegration
-from ML.secrets.api import YANDEXGPT_KEY, API_GIGACHAT
+from ML.EvaProjectIntegration.EvaProjectIntegration import create_task
 
 
 class Service:
@@ -161,6 +160,11 @@ class Service:
         return diarization(audio_path)
 
     @staticmethod
-    def run_task_tracker_processing():
+    def run_task_tracker_processing(document):
 
-        return None
+        try:
+           create_task(document)
+           return "Success"
+
+        except Exception as e:
+            return f'Error sending message through tg bot: {e}'
