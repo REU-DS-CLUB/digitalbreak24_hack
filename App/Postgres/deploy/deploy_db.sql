@@ -13,5 +13,6 @@ create table if not exists file_library
     unofficial_summary_path   varchar default null,
     speaker_mapping           json default null,
     document                  json default null,
-    status                    varchar not null
+    status                    varchar not null,
+    chat_id                   varchar not null
 );

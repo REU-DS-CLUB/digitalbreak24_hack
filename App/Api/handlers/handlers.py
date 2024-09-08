@@ -1,14 +1,11 @@
-import json
 import os
 from pathlib import Path
 from typing import Dict
 from pydub import AudioSegment
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse, FileResponse
-from fastapi.encoders import jsonable_encoder
+from fastapi import APIRouter
+from fastapi.responses import FileResponse
 from fastapi import UploadFile
-from starlette.status import HTTP_405_METHOD_NOT_ALLOWED
 
 from . import service
 
@@ -21,14 +18,15 @@ tmp_file_dir = "/files/audio/"
 Path(tmp_file_dir).mkdir(parents=True, exist_ok=True)
 
 
-@handlers.post(path="/file",
+@handlers.post(path="/send_file",
                summary='Endpoint for saving audio file from user',
                description="receives audio file in one of the accepted formats and saves it locally"
                )
-async def receive_file(file: UploadFile, create_time='2024-01-01 10:00:00', duration=0):
+async def receive_file(file: UploadFile, chat_id, create_time='2024-01-01 10:00:00', duration=0):
     """
     Args:
         file: бинарный вид аудио-файла в одном из допустимых форматов (ogg, wav, m4a, mp3, mpeg4, mpeg)
+        chat_id: идентификатор чата в tg, из которого был отправлен файл
         create_time: дата создания файла
         duration: продолжительность аудио
     """
@@ -54,13 +52,14 @@ async def receive_file(file: UploadFile, create_time='2024-01-01 10:00:00', dura
         file_id = service.insert_into_db(file.filename.replace(file.filename.split('.')[-1], 'mp3'),
                                          path.replace(file.filename.split('.')[-1], 'mp3'),
                                          create_time,
-                                         duration)
+                                         duration,
+                                         chat_id)
 
         # возвращаем клиенту идентификатор записи, по которой к ней можно будет обращаться
         return file_id
 
     except Exception as e:
-        raise e
+        return {"error": e}
 
 
 @handlers.get(path="/process_file/{file_id}",
@@ -74,30 +73,31 @@ async def process_file(file_id: int) -> str:
     """
 
     # TODO: пишу в бд в diarization
-    print(0)
+    print('read_from_db')
     file_path = service.read_from_db(file_id, field_name='audio_path')
-    print(1)
+    print('speech_processing')
     json_file = service.speech_processing(file_path)
-    print(2)
+    print('make_correction')
     json_file = service.make_correction(json_file=json_file)
-    print(3)
+    print('diarisation_to_text')
     participants, text = service.diarisation_to_text(json_file=json_file)
-    print(4)
+    print('make_questions')
     questions = service.make_questions(text=text)
-    print(5)
+    print('make_detail_questions')
     detail_questions = service.make_detail_questions(text=text, questions=questions)
-    print(6)
+    print('make_theme')
     theme = service.make_theme(text=text)
-    print(7)
+    print('make_theme')
     tasks = service.make_tasks(text=text)
-    print(8)
+    print('make_tasks')
 
     final_dict = service.make_final_dict(theme=theme, participants=participants, detail_questions=detail_questions, tasks=tasks)
     service.update_field_db(file_id, 'documents', final_dict)
 
-    # TODO: call tg bot alert
-    #
+    print(9)
+    service.send_message_as_bot(file_id, f"Ваш файл с идентификатором {file_id} успешно обработан")
 
+    print(10)
     status = service.update_field_db(file_id, 'status', 'обработка завершена')
 
     return status
@@ -133,50 +133,57 @@ async def send_file(file_id: int, content_type: str, unofficial_blocks=""):
         content_type: тип желаемого результата [audio/sum_word/sum_pdf]
         unofficial_blocks: желаемые логические блоки в неофициальном саммари записи (необязательный параметр)
     """
+    try:
+        if content_type == "audio":
+            audio_path = service.read_from_db(file_id, 'audio_path')['audio_path']
 
-    if content_type == "audio":
-        audio_path = service.read_from_db(file_id, 'audio_path')['audio_path']
+            return FileResponse(path=audio_path,
+                                filename=audio_path.split('/')[-1],
+                                media_type='audio/mpeg')
 
-        return FileResponse(path=audio_path,
-                            filename=audio_path.split('/')[-1],
-                            media_type='audio/mpeg')
+        elif content_type == "official_summary_word":
+            file_path = service.read_from_db(file_id, 'official_summary_path')
+            file_name = file_path.split('/')[-1]
+            return FileResponse(path=file_path, filename=file_name)
 
-    # TODO: написать логику
-    elif content_type == "sum_word":
-        file_path_1 = service.read_from_db(file_id, 'official_summary_path')
-        file_name_1 = ""
-        file_path_2 = service.read_from_db(file_id, 'unofficial_summary_path')
-        file_name_2 = ""
-        return FileResponse(path=file_path_1, filename=file_name_1, media_type='')
+        elif content_type == "unofficial_summary_word":
+            file_path = service.read_from_db(file_id, 'unofficial_summary_path')
+            file_name = file_path.split('/')[-1]
+            return FileResponse(path=file_path, filename=file_name)
 
-    # TODO: написать логику
-    elif content_type == "sum_pdf":
-        file_path_1 = service.read_from_db(file_id, 'official_summary_path')
-        file_name_1 = ""
-        file_path_2 = service.read_from_db(file_id, 'unofficial_summary_path')
-        file_name_2 = ""
-        return FileResponse(path=file_path_1, filename=file_name_1, media_type='')
+        elif content_type == "official_summary_pdf":
+            file_path = service.read_from_db(file_id, 'official_summary_path')
+            file_name = file_path.split('/')[-1]
+            return FileResponse(path=file_path, filename=file_name)
 
-    else:
-        return "error"
+        elif content_type == "unofficial_summary_pdf":
+            file_path = service.read_from_db(file_id, 'unofficial_summary_path')
+            file_name = file_path.split('/')[-1]
+            return FileResponse(path=file_path, filename=file_name)
+
+        else:
+            return "error"
+
+    except Exception as e:
+        return {"error": e}
 
 
 @handlers.get(path="/add_tasks/{file_id}",
               summary="Endpoint for adding tasks to the task tracker",
               description="creates tasks in task tracker from parsed audio recordings"
               )
-async def add_tasks(file_id: int) -> str:
+async def add_tasks(file_id: int):
     """
     Args:
         file_id: идентификатор файла, который необходим для процессинга
     """
 
-    # TODO: process tasks
-    #
+    try:
+        status = service.run_task_tracker_processing(file_id)
+        return status
 
-    status = ""
-
-    return status
+    except Exception as e:
+        return {"error": e}
 
 
 @handlers.get(path="/update_speakers_1/{file_id}",
