@@ -27,6 +27,7 @@ async def get_voice(message: Message, bot: Bot):
         }
 
         params = {
+            'chat_id': str(message.chat.id),
             'create_time': datetime.now(),
             'duration': message.voice.duration
         }

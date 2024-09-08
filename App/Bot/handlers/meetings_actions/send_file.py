@@ -12,22 +12,26 @@ from pypdf import PdfReader, PdfWriter
 router = Router()
 
 
-async def get_file_type(text: str) -> tuple[str, str]:
-    to_api = ""
+async def get_file_type(text: str) -> tuple[str, str, str]:
+    oficial = ""
+    inform = ""
     type_file = ""
     if text == "Отчет в PDF с паролем" or "Отчет в PDF":
-        to_api = "sum_pdf"
+        oficial = "official_summary_pdf"
+        inform = "unofficial_summary_pdf"
         type_file = "pdf"
 
     if text == "Отчет в Word":
-        to_api = "sum_word"
+        oficial = "official_summary_word"
+        inform = "unofficial_summary_word"
         type_file = "docx"
 
     if text == "Аудио":
-        to_api = "raw_audio"
+        oficial = "audio"
+        inform = "audio"
         type_file = "mp3"
 
-    return to_api, type_file
+    return oficial, inform, type_file
 
 
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Отчет в PDF с паролем")
@@ -42,22 +46,37 @@ async def set_pdf_password(message: Message, state: FSMContext):
     file_path = await get_file(message, state)
 
     try:
-        reader = PdfReader(file_path)
+        reader = PdfReader(file_path[0])
 
         writer = PdfWriter()
         writer.append_pages_from_reader(reader)
         writer.encrypt(message.text)
 
-        with open(file_path, "wb") as out_file:
+        with open(file_path[0], "wb") as out_file:
             writer.write(out_file)
 
-        file = FSInputFile(file_path)
+        file = FSInputFile(file_path[1])
+        await message.answer("Официальный файл")
+        await message.reply_document(file)
+
+        reader = PdfReader(file_path[1])
+
+        writer = PdfWriter()
+        writer.append_pages_from_reader(reader)
+        writer.encrypt(message.text)
+
+        with open(file_path[1], "wb") as out_file:
+            writer.write(out_file)
+
+        file = FSInputFile(file_path[1])
+        await message.answer("Неофициальный файл")
         await message.reply_document(file)
 
     except Exception:
         await message.answer("Нет pdf")
     finally:
-        os.remove(file_path)
+        os.remove(file_path[0])
+        os.remove(file_path[1])
 
 
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Отчет в PDF")
@@ -65,14 +84,20 @@ async def get_pdf(message: Message, state: FSMContext):
     file_path = await get_file(message, state)
 
     try:
-        file = FSInputFile(file_path)
-        await message.reply_document(file)
+        file_ofic = FSInputFile(file_path[0])
+        await message.answer("Официальный файл")
+        await message.reply_document(file_ofic)
+
+        file_informal = FSInputFile(file_path[1])
+        await message.answer("Неофициальный файл")
+        await message.reply_document(file_informal)
 
     except Exception:
         await message.answer("Нет файла")
 
     finally:
-        os.remove(file_path)
+        os.remove(file_path[0])
+        os.remove(file_path[1])
 
 
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Отчет в Word")
@@ -80,14 +105,20 @@ async def get_word(message: Message, state: FSMContext):
     file_path = await get_file(message, state)
 
     try:
-        file = FSInputFile(file_path)
-        await message.reply_document(file)
+        file_ofic = FSInputFile(file_path[0])
+        await message.answer("Официальный файл")
+        await message.reply_document(file_ofic)
+
+        file_informal = FSInputFile(file_path[1])
+        await message.answer("Неофициальный файл")
+        await message.reply_document(file_informal)
 
     except Exception:
         await message.answer("Нет файла")
 
     finally:
-        os.remove(file_path)
+        os.remove(file_path[0])
+        os.remove(file_path[1])
 
 
 async def get_file(message: Message, state: FSMContext):
@@ -98,19 +129,32 @@ async def get_file(message: Message, state: FSMContext):
         'accept': 'application/json'
     }
 
-    params = {
+    params_oficial = {
         'content_type': file_info[0]
     }
 
-    response = requests.get(f"http://84.201.145.135:8000/v1/handlers/send_file/{data['file_id']}",
-                            params=params,
+    response_oficial = requests.get(f"http://84.201.145.135:8000/v1/handlers/send_file/{data['file_id']}",
+                            params=params_oficial,
                             headers=headers)
 
-    file_path = f"{os.path.dirname(os.path.abspath(__file__))}\\voices\\{data['file_id']}.{file_info[1]}"
-    f = open(file_path, 'wb')
-    f.write(response.content)
+    params_informal = {
+        'content_type': file_info[1]
+    }
+
+    response_informal = requests.get(f"http://84.201.145.135:8000/v1/handlers/send_file/{data['file_id']}",
+                            params=params_informal,
+                            headers=headers)
+
+    file_path_ofic = f"{os.path.dirname(os.path.abspath(__file__))}\\voices\\{data['file_id']}_ofic.{file_info[2]}"
+    file_path_info = f"{os.path.dirname(os.path.abspath(__file__))}\\voices\\{data['file_id']}_informal.{file_info[2]}"
+    f = open(file_path_ofic, 'wb')
+    f.write(response_oficial.content)
     f.close()
-    return file_path
+
+    f = open(file_path_info, 'wb')
+    f.write(response_informal.content)
+    f.close()
+    return file_path_ofic, file_path_info
 
 
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Аудио")
@@ -118,11 +162,12 @@ async def get_audio(message: Message, state: FSMContext):
     file_path = await get_file(message, state)
 
     try:
-        file = FSInputFile(file_path)
+        file = FSInputFile(file_path[0])
         await message.reply_audio(file)
 
     except Exception:
         await message.answer("Нет аудиофайла")
 
     finally:
-        os.remove(file_path)
+        os.remove(file_path[0])
+        os.remove(file_path[1])
