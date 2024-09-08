@@ -48,6 +48,20 @@ async def speakers(message: Message, state: FSMContext):
     await message.answer("Выбери действие", reply_markup=keyboard_speakers())
 
 
+@router.message(FindMeetingSteps.GET_ACTION and F.text == "Добавить задачи в таск трекер")
+async def task_treker(message: Message, state: FSMContext):
+    data = await state.get_data()
+    headers = {
+        'accept': 'application/json'
+    }
+    response = requests.get(f"http://84.201.145.135:8000/v1/handlers/send_file/{data['file_id']}",
+                                    headers=headers)
+    if "Success" in response.json():
+        await message.answer("Успешно оправлено")
+    else:
+        await message.answer("Не оправлено")
+
+
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Редактировать спикера")
 async def edit_speakers(message: Message, state: FSMContext):
     await state.set_state(EditSpeakers.GET_SPEAKER_ID)

@@ -22,6 +22,7 @@ def keyboard_action():
         [KeyboardButton(text="Спикеры")],
         [KeyboardButton(text="Получить статус обработки файла")],
         [KeyboardButton(text="Выбрать другую встречу")],
+        [KeyboardButton(text="Добавить задачи в таск трекер")],
         [KeyboardButton(text="В начало")]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, persistent=True, resize_keyboard=True)
