@@ -29,10 +29,10 @@ def keyboard_action():
 
 def file_type():
     kb = [
-        [KeyboardButton(text="Отчет в PDF с паролем")],
         [KeyboardButton(text="Отчет в PDF")],
         [KeyboardButton(text="Отчет в Word")],
         [KeyboardButton(text="Аудио")],
+        [KeyboardButton(text="Отчет в PDF с паролем")],
         [KeyboardButton(text="Назад")],
         [KeyboardButton(text="В начало")]
     ]
