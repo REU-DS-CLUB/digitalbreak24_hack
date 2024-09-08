@@ -25,6 +25,9 @@ langdetect = "^1.0.9"
 speechbox = "^0.2.1"
 pyannote-audio = "*"
 langchain_community = "*"
+asyncio = "*"
+aiogram = "*"
+pypdf = "*"
 
 [build-system]
 requires = ["poetry-core"]

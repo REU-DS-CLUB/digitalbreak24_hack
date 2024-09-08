@@ -1,7 +1,7 @@
-from poetry import load_dotenv
+# from poetry import load_dotenv
 import os
 
-load_dotenv()
+# load_dotenv()
 
 DB_HOST = os.environ.get("POSTGRES_HOST")
 DB_PORT = os.environ.get("POSTGRES_PORT")

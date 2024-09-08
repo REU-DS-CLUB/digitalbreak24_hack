@@ -3,7 +3,6 @@ from telegram import Bot
 
 from Postgres.connections import get_connection
 from ML.LLM import GigaChatTask, YandexGPT
-from ML.secrets.api import YANDEXGPT_KEY, API_GIGACHAT
 from ML.TextTransformation import make_correction, diarisation_to_text, make_questions, make_detail_questions, make_theme, make_tasks, make_final_dict
 from ML.secrets.api import API_GIGACHAT, YANDEXGPT_KEY
 from ML.LLM import GigaChatTask, YandexGPT
@@ -13,6 +12,8 @@ from ML.Prompts import make_speaker_mapping_prompt, verificatiom_correctness_pro
 
 from ML.SpeechProcessing import SpeechProcessing
 from ML.diarization import diarization
+from ML.EvaProjectIntegration import EvaProjectIntegration
+from ML.secrets.api import YANDEXGPT_KEY, API_GIGACHAT
 
 
 class Service:
@@ -53,15 +54,15 @@ class Service:
             return f'Error updating field: {e}'
 
     @staticmethod
-    def insert_into_db(file_name, path, create_time, duration):
+    def insert_into_db(file_name, path, create_time, duration, chat_id):
 
         try:
             with get_connection() as conn:
                 with conn.cursor() as cur:
 
                     cur.execute(f"""
-                        INSERT INTO public.file_library (file_name, create_time, duration, audio_path, status)
-                        VALUES ('{file_name}', '{create_time}', '{duration}', '{path}', 'получен и загружен');""")
+                        INSERT INTO public.file_library (file_name, create_time, duration, audio_path, status, chat_id)
+                        VALUES ('{file_name}', '{create_time}', '{duration}', '{path}', 'получен и загружен', {chat_id});""")
                     cur.execute("SELECT currval('file_library_id_seq') as file_id;")
                     file_id = cur.fetchone()
 
@@ -104,16 +105,25 @@ class Service:
         except Exception as e:
             return f'Error updating field: {e}'
 
-    # TODO: доделать
     @staticmethod
-    def send_message_as_bot(message):
+    def send_message_as_bot(file_id, message):
 
-        bot_token = '6920120642:AAHrs_dzwryiF1_7Rc9yE3RUWmxKHZGrFIs'
-        chat_id = '-4068483720'
-        bot = Bot(token=bot_token)
-        bot.send_message(chat_id=chat_id, text=message)
+        try:
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f"""
+                        SELECT chat_id
+                        FROM public.file_library
+                        WHERE id = {file_id};""")
 
-        pass
+                    chat_id = cur.fetchone()['chat_id']
+
+            bot_token = '7443785768:AAEq0GdrZx_FwNH6INOkv4i7_AQ23BLNaps'
+            bot = Bot(token=bot_token)
+            bot.send_message(chat_id=chat_id, text=message)
+
+        except Exception as e:
+            return f'Error sending message through tg bot: {e}'
 
     def make_correction(self, json_file,):
 
@@ -149,3 +159,8 @@ class Service:
     def speech_processing(audio_path):
 
         return diarization(audio_path)
+
+    @staticmethod
+    def run_task_tracker_processing():
+
+        return None
