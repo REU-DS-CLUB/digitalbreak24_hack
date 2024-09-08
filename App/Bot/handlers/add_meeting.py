@@ -1,17 +1,12 @@
 import os
-# from pydub import AudioSegment
 
 import requests
 from datetime import datetime
 
 from aiogram import Router, F, Bot
-from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup
-from aiogram.filters import Command
+from aiogram.types import Message
 
-from App.Bot.utils.statesform import AddNewMeeting, FindMeetingSteps, EditSpeakers
-
-from App.Bot.keyboards.keyboards import keyboard_start, keyboard_back_start, keyboard_action, file_type, keyboard_speakers
+from App.Bot.utils.statesform import AddNewMeeting
 
 router = Router()
 
