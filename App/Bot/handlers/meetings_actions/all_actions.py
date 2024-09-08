@@ -1,21 +1,18 @@
-import os
-
 import requests
-from datetime import datetime
 
-from aiogram import Router, F, Bot
+from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardRemove, ReplyKeyboardMarkup
-from aiogram.filters import Command
+from aiogram.types import Message
 
 from App.Bot.utils.statesform import AudioSpeaker, FindMeetingSteps, EditSpeakers
-from App.Bot.handlers.meetings_actions import speakers
-from App.Bot.keyboards.keyboards import keyboard_start, keyboard_back_start, keyboard_action, file_type, keyboard_speakers
+from App.Bot.handlers.meetings_actions import speakers, send_file
+from App.Bot.keyboards.keyboards import keyboard_start, keyboard_action, file_type, keyboard_speakers
 
 router = Router()
 
 router.include_routers(
-    speakers.router
+    speakers.router,
+    send_file.router
 )
 
 
@@ -43,15 +40,11 @@ async def get_id_meeting(message: Message, state: FSMContext):
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Посмотреть файлы")
 async def action_show_file(message: Message, state: FSMContext):
     await message.answer("Выбери тип файла", reply_markup=file_type())
-    await state.set_state(FindMeetingSteps.GET_ACTION)
-    print("Чел хочет посмотреть файлы")
 
 
 @router.message(FindMeetingSteps.GET_ACTION and F.text == "Спикеры")
 async def speakers(message: Message, state: FSMContext):
     await get_speakers(message, state)
-    # for speaker in get_speakers(state):
-    #     pass
     await message.answer("Выбери действие", reply_markup=keyboard_speakers())
 
 
@@ -83,7 +76,7 @@ async def get_speakers(message: Message, state: FSMContext):
             if ans['speaker_mapping'][speaker][1] == "":
                 ans['speaker_mapping'][speaker][1] = "не задана"
 
-            answer += f"{speaker}: имя {ans['speaker_mapping'][speaker][0]} и должность {ans['speaker_mapping'][speaker][1]}\n"
+            answer += f"{speaker}: имя {ans['speaker_mapping'][speaker][0]} (должность {ans['speaker_mapping'][speaker][1]})\n"
         await message.answer(answer)
     else:
         await message.answer("Нет спикеров.")

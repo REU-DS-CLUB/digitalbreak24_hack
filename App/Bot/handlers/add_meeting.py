@@ -44,7 +44,6 @@ async def get_voice(message: Message, bot: Bot):
         response = requests.post('http://84.201.145.135:8000/v1/handlers/file', params=params, headers=headers,
                                  files=files)
         answer = response.json()
-        print(answer)
         if "error" not in answer and "file_id" in answer:
             await message.answer(f"Файл скачен. \nИдентификационный номер файла - {answer['file_id']}")
         else:
