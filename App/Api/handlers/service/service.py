@@ -1,9 +1,5 @@
-from datetime import datetime
-from typing import List
+import json
 
-import pandas as pd
-from Api.handlers.model.score_per_station import ScorePerStation
-from utils.utils import preprocessing
 from Postgres.connections import get_connection
 
 
@@ -12,7 +8,8 @@ class Service:
     Service to handle requests with params
     """
 
-    def read_from_db(self, file_id: int, field_name: str) -> str:
+    @staticmethod
+    def read_from_db(file_id: int, field_name: str) -> str:
 
         with get_connection() as conn:
             with conn.cursor() as cur:
@@ -22,50 +19,72 @@ class Service:
                     FROM public.file_library
                     WHERE id = {file_id};""")
 
-        # TODO: проверить корректность вывода
-        return cur.fetch()
+                answer = cur.fetchone()
 
-    # TODO: update path in db
-    def update_path_db(self, file_id: int, field_name: str, new_value):
+        return answer
 
-        with get_connection() as conn:
-            with conn.cursor() as cur:
-                cur.execute(f"""
-                    UPDATE public.file_library
-                    SET {field_name} = {new_value}
-                    WHERE id = {file_id};""")
+    @staticmethod
+    def update_field_db(file_id: int, field_name: str, new_value):
+        try:
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(f"""
+                        UPDATE public.file_library
+                        SET {field_name} = {new_value}
+                        WHERE id = {file_id};""")
+                return 'Success'
 
-    def insert_into_db(self, file_name) -> int:
-        with get_connection() as conn:
-            with conn.cursor() as cur:
+        except Exception as e:
+            return f'Error updating field: {e}'
 
-                cur.execute("""
-                    SELECT max(id) + 1
-                    FROM public.file_library;""")
+    @staticmethod
+    def insert_into_db(file_name, path, create_time, duration):
 
-                file_id = cur.fetch()
+        try:
+            with get_connection() as conn:
+                with conn.cursor() as cur:
 
-                cur.execute(f"""
-                    INSERT INTO public.file_library (file_name, status)
-                    VALUES ({file_name}, 'received and downloaded');""")
+                    cur.execute(f"""
+                        INSERT INTO public.file_library (raw_file_name, create_time, duration, raw_audio_path, status)
+                        VALUES ('{file_name}', '{create_time}', '{duration}', '{path}', 'получен и загружен');""")
+                    cur.execute("SELECT currval('file_library_id_seq') as file_id;")
+                    file_id = cur.fetchone()
 
-                # TODO: проверить корректность вывода
-                conn.commit()
+                    conn.commit()
 
-        return file_id
+                return file_id
 
-    def update_speaker_mapping_db(self, speaker_id, new_name):
+        except Exception as e:
+            return e
 
-        # TODO: select json from DB
+    @staticmethod
+    def update_speaker_mapping_db(file_id, speaker_id, new_name, new_role):
 
-        # TODO: replace old value with new_value by key
+        try:
+            with get_connection() as conn:
+                with conn.cursor() as cur:
 
-        pass
+                    cur.execute(f"""
+                        SELECT speaker_mapping
+                        FROM public.file_library 
+                        WHERE id = '{file_id}';""")
 
-    # TODO: processing task tracker
-    #
+                    new_speaker_mapping = cur.fetchone()['speaker_mapping']
+                    old_values = new_speaker_mapping[speaker_id]
+                    if new_name == '-':
+                        new_name = old_values[0]
+                    if new_role == '-':
+                        new_role = old_values[1]
+                    new_speaker_mapping[speaker_id] = [new_name, new_role]
 
-    # TODO: processing ML
-    #
+                    cur.execute(f"""
+                        UPDATE public.file_library 
+                        SET speaker_mapping = '{json.dumps(new_speaker_mapping)}'
+                        WHERE id = '{file_id}';""")
 
-    # TODO:
+                    conn.commit()
+
+                    return 'Success'
+
+        except Exception as e:
+            return f'Error updating field: {e}'
