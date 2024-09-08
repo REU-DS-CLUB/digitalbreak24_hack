@@ -17,7 +17,7 @@ handlers = APIRouter(
     tags=['handlers']
 )
 
-tmp_file_dir = "/files/raw_audio/"
+tmp_file_dir = "/files/audio/"
 Path(tmp_file_dir).mkdir(parents=True, exist_ok=True)
 
 
@@ -73,12 +73,27 @@ async def process_file(file_id: int) -> str:
         file_id: идентификатор файла, который необходим для процессинга
     """
 
-    file_path = service.read_from_db(file_id, field_name='raw_audio_path')
+    # TODO: пишу в бд в diarization
+    print(0)
+    file_path = service.read_from_db(file_id, field_name='audio_path')
+    print(1)
+    json_file = service.speech_processing(file_path)
+    print(2)
+    json_file = service.make_correction(json_file=json_file)
+    print(3)
+    participants, text = service.diarisation_to_text(json_file=json_file)
+    print(4)
+    questions = service.make_questions(text=text)
+    print(5)
+    detail_questions = service.make_detail_questions(text=text, questions=questions)
+    print(6)
+    theme = service.make_theme(text=text)
+    print(7)
+    tasks = service.make_tasks(text=text)
+    print(8)
 
-    # TODO: call processing pipeline on file_path
-    #
-
-    #
+    final_dict = service.make_final_dict(theme=theme, participants=participants, detail_questions=detail_questions, tasks=tasks)
+    service.update_field_db(file_id, 'documents', final_dict)
 
     # TODO: call tg bot alert
     #
@@ -107,7 +122,7 @@ async def get_status(file_id: int):
         return {"error": e}
 
 
-@handlers.get(path="/send_file/{file_id}/{type}",
+@handlers.get(path="/send_file/{file_id}",
               summary="Endpoint for getting processing results",
               description="receives recording id and sends it's chosen files back to the client"
               )
@@ -115,12 +130,12 @@ async def send_file(file_id: int, content_type: str, unofficial_blocks=""):
     """
     Args:
         file_id: идентификатор файла, который необходим для процессинга
-        content_type: тип желаемого результата [raw_audio/sum_word/sum_pdf]
+        content_type: тип желаемого результата [audio/sum_word/sum_pdf]
         unofficial_blocks: желаемые логические блоки в неофициальном саммари записи (необязательный параметр)
     """
 
-    if content_type == "raw_audio":
-        audio_path = service.read_from_db(file_id, 'raw_audio_path')['raw_audio_path']
+    if content_type == "audio":
+        audio_path = service.read_from_db(file_id, 'audio_path')['audio_path']
 
         return FileResponse(path=audio_path,
                             filename=audio_path.split('/')[-1],
@@ -206,7 +221,7 @@ async def update_speakers_2(file_id: int, speaker_id: str):
         return time_brackets
 
     try:
-        audio_path = service.read_from_db(file_id, 'raw_audio_path')['raw_audio_path']
+        audio_path = service.read_from_db(file_id, 'audio_path')['audio_path']
         print(f'audio_path_1: {audio_path}')
 
         song = AudioSegment.from_mp3(audio_path)

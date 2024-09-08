@@ -18,6 +18,13 @@ uvicorn = "^0.30.6"
 pydantic-settings = "*"
 python-multipart = "^0.0.9"
 ffmpeg = "*"
+python-telegram-bot = "*"
+transformers = "^4.44.2"
+torch = "^2.4.1"
+langdetect = "^1.0.9"
+speechbox = "^0.2.1"
+pyannote-audio = "*"
+langchain_community = "*"
 
 [build-system]
 requires = ["poetry-core"]

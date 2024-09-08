@@ -1,12 +1,27 @@
 import json
+from telegram import Bot
 
 from Postgres.connections import get_connection
+from ML.LLM import GigaChatTask, YandexGPT
+from ML.secrets.api import YANDEXGPT_KEY, API_GIGACHAT
+from ML.TextTransformation import make_correction, diarisation_to_text, make_questions, make_detail_questions, make_theme, make_tasks, make_final_dict
+from ML.secrets.api import API_GIGACHAT, YANDEXGPT_KEY
+from ML.LLM import GigaChatTask, YandexGPT
+from ML.Prompts import make_speaker_mapping_prompt, verificatiom_correctness_prompt, \
+                    getting_question_prompt, questions_details_prompt, make_theme_prompt, \
+                    tasks_details_prompt
+
+from ML.SpeechProcessing import SpeechProcessing
+from ML.diarization import diarization
 
 
 class Service:
     """
     Service to handle requests with params
     """
+    def __init__(self):
+        self.gigachat = GigaChatTask(API_GIGACHAT)
+        self.yandexgpt = YandexGPT(YANDEXGPT_KEY)
 
     @staticmethod
     def read_from_db(file_id: int, field_name: str) -> str:
@@ -45,7 +60,7 @@ class Service:
                 with conn.cursor() as cur:
 
                     cur.execute(f"""
-                        INSERT INTO public.file_library (raw_file_name, create_time, duration, raw_audio_path, status)
+                        INSERT INTO public.file_library (file_name, create_time, duration, audio_path, status)
                         VALUES ('{file_name}', '{create_time}', '{duration}', '{path}', 'получен и загружен');""")
                     cur.execute("SELECT currval('file_library_id_seq') as file_id;")
                     file_id = cur.fetchone()
@@ -88,3 +103,49 @@ class Service:
 
         except Exception as e:
             return f'Error updating field: {e}'
+
+    # TODO: доделать
+    @staticmethod
+    def send_message_as_bot(message):
+
+        bot_token = '6920120642:AAHrs_dzwryiF1_7Rc9yE3RUWmxKHZGrFIs'
+        chat_id = '-4068483720'
+        bot = Bot(token=bot_token)
+        bot.send_message(chat_id=chat_id, text=message)
+
+        pass
+
+    def make_correction(self, json_file,):
+
+        return make_correction(self.gigachat, verificatiom_correctness_prompt, json_file)
+
+    @staticmethod
+    def diarisation_to_text(json_file):
+
+        return diarisation_to_text(json_file)
+
+    def make_questions(self, text):
+
+        return make_questions(self.gigachat, getting_question_prompt, text)
+
+    def make_detail_questions(self, text, questions):
+
+        return make_detail_questions(self.gigachat, questions_details_prompt, text, questions)
+
+    def make_theme(self, text):
+
+        return make_theme(self.gigachat, make_theme_prompt, text)
+
+    def make_tasks(self, text):
+
+        return make_tasks(self.gigachat, tasks_details_prompt, text)
+
+    @staticmethod
+    def make_final_dict(theme, participants, detail_questions, tasks):
+
+        return make_final_dict(theme, participants, detail_questions, tasks)
+
+    @staticmethod
+    def speech_processing(audio_path):
+
+        return diarization(audio_path)

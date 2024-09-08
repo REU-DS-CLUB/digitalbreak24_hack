@@ -3,8 +3,8 @@ drop table if exists file_library;
 create table if not exists file_library
 (
     id                        serial,
-    raw_file_name             varchar not null,
-    raw_audio_path            varchar not null,
+    file_name                 varchar not null,
+    audio_path                varchar not null,
     create_time               timestamp not null,
     duration                  int not null,
     diarization               json default null,

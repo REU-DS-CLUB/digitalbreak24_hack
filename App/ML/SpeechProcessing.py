@@ -1,10 +1,13 @@
 import torch
+import numpy as np
 from typing import Any, Dict, Tuple
+from pydub import AudioSegment
 from huggingface_hub import login
-from datasets import load_dataset
+
 from transformers import pipeline
 from pyannote.audio import Pipeline as DiarizationPipeline
 from speechbox import ASRDiarizationPipeline
+from pyannote.audio import Pipeline
 
 
 class SpeechProcessing:
@@ -15,52 +18,72 @@ class SpeechProcessing:
         """
         self.diarization_pipeline: DiarizationPipeline = None
         self.asr_pipeline: Any = None
-    
-    
+
+        # Определение устройства (GPU или CPU)
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        print(f"Using device: {self.device}")
+
     @staticmethod
     def authorization() -> None:
         """
         Авторизация на Hugging Face с использованием токена из файла.
         """
-        with open("secrets/hugging_face_token.txt", "r") as file:
-            hugging_face_token: str = file.read()
+        login(token="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")
 
-        login(token=hugging_face_token, add_to_git_credential=True)
-
-
-    def load_diarization_model(self) -> None:
+    @classmethod
+    def load_diarization_model(cls) -> None:
         """
         Загрузка модели для диаризации речи.
         """
-        self.diarization_pipeline = DiarizationPipeline.from_pretrained(
-            "pyannote/speaker-diarization@2.1", use_auth_token=True
+        cls.diarization_pipeline = Pipeline.from_pretrained(
+            "pyannote/speaker-diarization-3.0",
         )
-
-
-    def load_asr_model(self) -> None:
+        
+    @classmethod
+    def load_asr_model(cls) -> None:
         """
         Загрузка модели для автоматического распознавания речи (ASR).
         """
-        self.asr_pipeline = pipeline(
+        cls.asr_pipeline = pipeline(
             "automatic-speech-recognition",
-            model="openai/whisper-base",
+            model="openai/whisper-medium",
+            device='cuda' if torch.cuda.is_available() else 'cpu' # Используем GPU, если доступен
         )
 
-
-    def load_dataset(self) -> Dict[str, Any]:
+    def load_mp3(self, file_path: str) -> Dict[str, Any]:
         """
-        Загрузка и получение выборки из датасета.
+        Загрузка аудиофайла в формате MP3 и конвертация его в нужный формат.
+        
+        Args:
+            file_path (str): Путь к файлу MP3.
         
         Returns:
-            Dict[str, Any]: Первое значение из стримингового датасета.
+            Dict[str, Any]: Словарь с аудиоданными и частотой дискретизации.
         """
-        concatenated_librispeech = load_dataset(
-            "sanchit-gandhi/concatenated_librispeech", split="train", streaming=True
-        )
-        return next(iter(concatenated_librispeech))
+        # Загружаем MP3 файл
+        audio = AudioSegment.from_mp3(file_path)
+        
+        # Конвертируем в моно и частоту дискретизации 16kHz
+        audio = audio.set_channels(1).set_frame_rate(16000)
+        
+        # Нормализация громкости
+        audio = audio.normalize()  
+        
+        # Применение низкочастотного фильтра для удаления шума
+        audio = audio.low_pass_filter(3000)  
+        
+        # Преобразуем в numpy массив
+        samples = np.array(audio.get_array_of_samples()).astype(np.float32) / 32768.0
+        
+        # Возвращаем данные в нужном формате
+        return {
+            "audio": {
+                "array": samples,
+                "sampling_rate": 16000
+            }
+        }
 
-
-    def process_audio(self, sample: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
+    def diarize_audio(self, sample: Dict[str, Any]) -> Tuple[Dict[str, Any], Any]:
         """
         Процессинг аудио для диаризации и распознавания речи.
         
@@ -70,20 +93,27 @@ class SpeechProcessing:
         Returns:
             Tuple[Dict[str, Any], Any]: Результаты распознавания речи (ASR) и диаризации.
         """
-        input_tensor = torch.from_numpy(sample["audio"]["array"][None, :]).float()
+        self.__class__.diarization_pipeline.to(self.device)
         
-        diarization_result = self.diarization_pipeline(
+        # Преобразование аудио в тензор и перемещение на GPU/CPU
+        input_tensor = torch.from_numpy(sample["audio"]["array"][None, :]).float().to(self.device)
+        
+        # Диаризация
+        diarization_result = self.__class__.diarization_pipeline(
             {"waveform": input_tensor, "sample_rate": sample["audio"]["sampling_rate"]}
         )
         
-        asr_result = self.asr_pipeline(
-            sample["audio"].copy(),
-            generate_kwargs={"max_new_tokens": 256},
-            return_timestamps=True,
-        )
-        
-        return asr_result, diarization_result
+        return diarization_result
 
+    def transcribe_audio(self, sample):
+        
+        # Распознавание речи
+        asr_result = self.__class__.asr_pipeline(
+            sample["audio"]["array"].copy(),
+            generate_kwargs={"max_new_tokens": 256, "language": "ru"},
+            return_timestamps=True
+        )
+        return asr_result
 
     def combine_pipelines(self, sample: Dict[str, Any]) -> Any:
         """
@@ -96,10 +126,10 @@ class SpeechProcessing:
             Any: Результат обработки аудиофайла с помощью объединенных пайплайнов ASR и диаризации.
         """
         pipeline = ASRDiarizationPipeline(
-            asr_pipeline=self.asr_pipeline, diarization_pipeline=self.diarization_pipeline
+            asr_pipeline=self.__class__.asr_pipeline, diarization_pipeline=self.__class__.diarization_pipeline
         )
+        print(pipeline)
         return pipeline(sample["audio"].copy())
-
 
     @staticmethod
     def tuple_to_string(start_end_tuple: Tuple[float, float], ndigits: int = 1) -> str:
@@ -115,8 +145,7 @@ class SpeechProcessing:
         """
         return str((round(start_end_tuple[0], ndigits), round(start_end_tuple[1], ndigits)))
 
-
-    def format_as_transcription(self, raw_segments: Any) -> str:
+    def format_as_transcription(self, raw_segments: Any):
         """
         Форматирование сырых сегментов в текстовую транскрипцию.
         
@@ -126,9 +155,6 @@ class SpeechProcessing:
         Returns:
             str: Текстовая транскрипция всех сегментов.
         """
-        return "\n\n".join(
-            [
-                chunk["speaker"] + " " + self.tuple_to_string(chunk["timestamp"]) + ": " + chunk["text"]
-                for chunk in raw_segments
-            ]
-        )
+        return {
+            str(chunk["timestamp"][0], chunk["timestamp"][1]) : {"speaker": chunk["speaker"], "text": chunk["text"]} for chunk in raw_segments
+        }
