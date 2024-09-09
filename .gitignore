@@ -12,6 +12,7 @@ __pycahe__/
 /venv
 /.venv
 secrets
+App/ML/secrets.py
 
 .idea/
 App/Bot/__pycache__/
