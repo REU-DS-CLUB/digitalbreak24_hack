@@ -103,5 +103,6 @@ file_library
 |--------------------|---------------------|----------------|
 | Иванов Александр   | Team Lead, MLE      | @lild1tz       |
 | Пашинская Пелагея  | MLE                 | @polyanka003   |
-| Александр Грикуров | SWE                 | @аlexgrikurov  |
+| Агишев Вдадимир | MLE                 | @vladimir_agishev |
+| Лариса Латунова | SWE                 | @LarisaLat  |
 | Мичурин Артем      | Fullstack           | @artemmichurin |
