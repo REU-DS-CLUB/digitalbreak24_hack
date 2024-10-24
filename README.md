@@ -15,7 +15,7 @@
 3 Решение интегрируется с таск трекером EvaProject; используется модель LLM, выбранная на основе сравнения экономичской эффективности доступных вариантов; используются регулярные выражения для фильтрации галюцинаций; предлагаем идею шифрования конфиденциальных данных при передаче на сторонние сервисы.
 
 ## Презентация с защиты проекта
-https://docs.google.com/presentation/d/18xtmQZNhar8BphjdEZ8b-C5yH8LUqIRqfK4KHsik2Dg/edit?usp=sharing
+https://docs.google.com/presentation/d/18xtmQZNhar8BphjdEZ8b-C5yH8LUqIRqfK4KHsik2Dg/edit?usp=sharing 
 
 
   
